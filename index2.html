@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IBS.Assistent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: #e2e0d8;
+      --border-strong: #c8c6bc;
+      --text: #1a1917;
+      --text-muted: #6b6963;
+      --text-faint: #a09d97;
+      --accent-blue: #185FA5;
+      --accent-blue-bg: #e6f1fb;
+      --accent-green: #3B6D11;
+      --accent-green-bg: #eaf3de;
+      --accent-amber: #7a5c00;
+      --accent-amber-bg: #fffbeb;
+      --accent-amber-border: #f5d87a;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.25rem 2rem;
+      border-bottom: 0.5px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo { font-family: 'DM Serif Display', serif; font-size: 20px; }
+    .logo span { color: var(--accent-blue); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+    }
+
+    #screen-home { width: 100%; max-width: 560px; text-align: center; }
+    .home-sub { font-size: 15px; color: var(--text-muted); font-weight: 300; margin-bottom: 2.5rem; }
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .menu-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+    }
+    .menu-card:hover { border-color: var(--border-strong); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+    .menu-card:active { transform: scale(0.98); }
+    .card-icon { font-size: 26px; }
+    .card-icon.blue { color: var(--accent-blue); }
+    .card-icon.green { color: var(--accent-green); }
+    .card-title { font-family: 'DM Serif Display', serif; font-size: 17px; line-height: 1.25; }
+    .card-desc { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.5; }
+    .card-arrow { margin-top: auto; font-size: 16px; color: var(--text-faint); transition: transform 0.15s, color 0.15s; }
+    .menu-card:hover .card-arrow { transform: translateX(4px); color: var(--text-muted); }
+
+    .screen-inner { width: 100%; max-width: 700px; }
+    .back-btn {
+      background: none; border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif; transition: border-color 0.15s, color 0.15s;
+      margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .back-btn:hover { border-color: var(--border-strong); color: var(--text); }
+    .screen-title { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 6px; }
+    .screen-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 2rem; font-weight: 300; line-height: 1.6; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+    input[type="text"] {
+      width: 100%; background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px;
+      font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: var(--border-strong); }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s;
+      background: var(--surface);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent-blue); background: var(--accent-blue-bg); }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .drop-icon { font-size: 32px; margin-bottom: 10px; color: var(--text-faint); }
+    .drop-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .drop-sub { font-size: 12px; color: var(--text-muted); }
+
+    .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .file-item {
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      padding: 8px 12px; display: flex; align-items: center; gap: 10px; font-size: 13px;
+    }
+    .file-item-icon { color: var(--accent-blue); font-size: 16px; }
+    .file-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-item-size { color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+    .file-remove { cursor: pointer; color: var(--text-faint); font-size: 16px; transition: color 0.15s; border: none; background: none; padding: 0; }
+    .file-remove:hover { color: #c0392b; }
+
+    .btn-primary {
+      background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm);
+      padding: 12px 28px; font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: opacity 0.15s, transform 0.15s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: none; color: var(--text); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 20px; font-size: 14px; font-weight: 400; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: border-color 0.15s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-secondary:hover { border-color: var(--border-strong); }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1.5rem; }
+
+    .progress-wrap { margin: 1.5rem 0; display: none; }
+    .progress-wrap.visible { display: block; }
+    .progress-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .progress-bar-bg { background: var(--border); border-radius: 99px; height: 4px; }
+    .progress-bar { background: var(--accent-blue); border-radius: 99px; height: 4px; width: 0%; transition: width 0.4s; }
+    .progress-log { margin-top: 10px; font-size: 11px; color: var(--text-faint); font-family: monospace; max-height: 120px; overflow-y: auto; line-height: 1.5; }
+
+    .result-box {
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius);
+      padding: 1.5rem; margin-top: 1.5rem; display: none;
+    }
+    .result-box.visible { display: block; }
+    .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .result-title { font-weight: 500; font-size: 15px; }
+    .result-count { font-size: 12px; color: var(--text-muted); }
+
+    .table-wrap { overflow-x: auto; max-height: 360px; overflow-y: auto; border: 0.5px solid var(--border); border-radius: var(--radius-sm); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: var(--bg); padding: 8px 12px; text-align: left; font-weight: 500; font-size: 11px; color: var(--text-muted); border-bottom: 0.5px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+    td { padding: 7px 12px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+    .cat-cell { font-weight: 500; color: var(--accent-blue); }
+
+    .banner {
+      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px;
+      display: flex; align-items: flex-start; gap: 8px; margin-bottom: 1.25rem; line-height: 1.5;
+    }
+    .banner.amber { background: var(--accent-amber-bg); border: 0.5px solid var(--accent-amber-border); color: var(--accent-amber); }
+    .banner.info { background: var(--accent-blue-bg); border: 0.5px solid #b5d4f4; color: var(--accent-blue); }
+
+    .analysis-section { margin-bottom: 2rem; }
+    .analysis-section h3 { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+    .analysis-section p { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+    .analysis-section ul { margin-left: 1.5rem; font-size: 14px; line-height: 1.75; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 520px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">IBS<span>.</span>Assistent</div>
+</header>
+
+<main>
+
+  <div id="screen-home">
+    <p class="home-sub">Wähle einen Bereich, um zu beginnen.</p>
+    <div class="card-grid">
+      <div class="menu-card" onclick="showScreen('create')">
+        <div class="card-icon blue">⊞</div>
+        <div class="card-title">Technikaufstellungen erstellen</div>
+        <div class="card-desc">PDFs hochladen — KI erstellt automatisch eine Excel-Aufstellung</div>
+        <div class="card-arrow">→</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('rate')">
+        <div class="card-icon green">✓</div>
+        <div class="card-title">Pläne bewerten</div>
+        <div class="card-desc">Schemata &amp; Grundrisse auf Plausibilität prüfen — hochauflösende Analyse</div>
+        <div class="card-arrow">→</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-create" class="screen-inner hidden">
+    <button class="back-btn" onclick="showScreen('home')">← Zurück</button>
+    <h2 class="screen-title">Technikaufstellung erstellen</h2>
+    <p class="screen-sub">Schemata und Grundrisspläne als PDF hochladen — die KI extrahiert alle Geräte &amp; Anlagen und erstellt eine Excel-Datei. Große Pläne werden automatisch in hochauflösende Segmente zerlegt für präzise Erkennung.</p>
+
+    <div class="banner amber">
+      🔑 API-Key: Öffne diese Datei im Texteditor und trage deinen Key bei <code>API_KEY</code> ein.
+    </div>
+
+    <div class="form-group">
+      <label>Projektname / -nummer</label>
+      <input type="text" id="project-name" placeholder="z.B. BE0493 – Campus Reuter Neubau" />
+    </div>
+
+    <div class="form-group">
+      <label>Pläne hochladen (PDF)</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf" multiple />
+        <div class="drop-icon">📄</div>
+        <div class="drop-title">PDFs hier ablegen oder klicken</div>
+        <div class="drop-sub">Schemata, Grundrisse, Stücklisten — mehrere Dateien möglich</div>
+      </div>
+      <div class="file-list" id="file-list"></div>
+    </div>
+
+    <div class="banner info">
+      ℹ️ Die KI erkennt Geräte &amp; Anlagen (Pumpen, Lüftungsgeräte, Verteiler, Heizkörper, etc.) und strukturiert sie nach Gewerk. Große Pläne werden in 768×768px-Kacheln zerlegt für maximale Erkennungsgenauigkeit.
+    </div>
+
+    <button class="btn-primary" id="create-btn" onclick="runCreate()">
+      Excel generieren →
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label" id="progress-label">Analysiere PDFs…</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="progress-log" id="progress-log"></div>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="result-header">
+        <div class="result-title">📋 Vorschau der Aufstellung</div>
+        <div class="result-count" id="result-count"></div>
+      </div>
+      <div class="table-wrap">
+        <table id="result-table">
+          <thead>
+            <tr>
+              <th>Gewerk / Kategorie</th>
+              <th>Menge</th>
+              <th>Bezeichnung</th>
+              <th>Typ / Modell</th>
+              <th>Raum / Standort</th>
+              <th>Bemerkung</th>
+            </tr>
+          </thead>
+          <tbody id="result-tbody"></tbody>
+        </table>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="downloadExcel()">⬇ Excel herunterladen</button>
+        <button class="btn-secondary" onclick="resetCreate()">Neue Analyse</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-rate" class="screen-inner hidden">
+    <button class="back-btn" onclick="showScreen('home')">← Zurück</button>
+    <h2 class="screen-title">Pläne bewerten</h2>
+    <p class="screen-sub">Lade Schemata und Grundrisse hoch — die KI prüft technische Plausibilität, fehlende Komponenten, physikalische Konsistenz und Normkonformität. Große Pläne werden automatisch in hochauflösende Segmente zerlegt.</p>
+    
+    <div class="banner amber">🔑 API-Key in Datei unter <code>API_KEY</code> eintragen.</div>
+    
+    <div class="banner info">
+      ℹ️ <strong>Multi-Pass-Analyse:</strong> Große Pläne (z.B. A0-Format) werden in 768×768px-Kacheln gerendert und sequenziell analysiert. Dadurch erkennt die KI auch kleinste Details wie Ventiltypen, Rohrbezeichnungen und fehlende Komponenten.
+    </div>
+
+    <div class="form-group">
+      <label>Dokumente hochladen (PDF)</label>
+      <div class="drop-zone" id="drop-zone-rate">
+        <input type="file" id="file-input-rate" accept=".pdf" multiple />
+        <div class="drop-icon">📄</div>
+        <div class="drop-title">PDFs hier ablegen oder klicken</div>
+        <div class="drop-sub">Heizungsschemata, Lüftungspläne, Sanitärschemen, Grundrisse</div>
+      </div>
+      <div class="file-list" id="file-list-rate"></div>
+    </div>
+
+    <button class="btn-primary" id="rate-btn" onclick="runRate()">Plausibilitätsprüfung starten →</button>
+    
+    <div class="progress-wrap" id="progress-wrap-rate">
+      <div class="progress-label" id="progress-label-rate">Analysiere…</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar-rate"></div></div>
+      <div class="progress-log" id="progress-log-rate"></div>
+    </div>
+    
+    <div class="result-box" id="result-box-rate">
+      <div class="result-header"><div class="result-title">🔍 Plausibilitätsanalyse</div></div>
+      <div id="rate-result-text"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const API_KEY = "sk-ant-api03-B2hCbgLDPpmj0vfUnLapZPWoN2BYN3I1wmLPGsirgvkx1wrPBpI2U-GfsJMPDJLdU-94WhyQyHyqrUjzdn6wKw—_pYh0AAA";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  let uploadedFiles = [];
+  let uploadedFilesRate = [];
+  let parsedRows = [];
+
+  function showScreen(name) {
+    ['home','create','rate'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden'));
+    document.getElementById('screen-'+name).classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); addFiles(e.dataTransfer.files, 'create'); });
+  fileInput.addEventListener('change', () => addFiles(fileInput.files, 'create'));
+
+  const dropZoneRate = document.getElementById('drop-zone-rate');
+  const fileInputRate = document.getElementById('file-input-rate');
+  dropZoneRate.addEventListener('dragover', e => { e.preventDefault(); dropZoneRate.classList.add('drag-over'); });
+  dropZoneRate.addEventListener('dragleave', () => dropZoneRate.classList.remove('drag-over'));
+  dropZoneRate.addEventListener('drop', e => { e.preventDefault(); dropZoneRate.classList.remove('drag-over'); addFiles(e.dataTransfer.files, 'rate'); });
+  fileInputRate.addEventListener('change', () => addFiles(fileInputRate.files, 'rate'));
+
+  function addFiles(fileList, mode) {
+    const arr = mode === 'create' ? uploadedFiles : uploadedFilesRate;
+    const listEl = document.getElementById('file-list' + (mode === 'rate' ? '-rate' : ''));
+    Array.from(fileList).forEach(f => {
+      if (f.type === 'application/pdf' && !arr.find(x => x.name === f.name)) arr.push(f);
+    });
+    renderFileList(arr, listEl, mode);
+  }
+
+  function removeFile(name, mode) {
+    if (mode === 'create') uploadedFiles = uploadedFiles.filter(f => f.name !== name);
+    else uploadedFilesRate = uploadedFilesRate.filter(f => f.name !== name);
+    const listEl = document.getElementById('file-list' + (mode === 'rate' ? '-rate' : ''));
+    renderFileList(mode === 'create' ? uploadedFiles : uploadedFilesRate, listEl, mode);
+  }
+
+  function renderFileList(arr, el, mode) {
+    el.innerHTML = arr.map(f => `
+      <div class="file-item">
+        <span class="file-item-icon">📄</span>
+        <span class="file-item-name">${f.name}</span>
+        <span class="file-item-size">${(f.size/1024).toFixed(0)} KB</span>
+        <button class="file-remove" onclick="removeFile('${f.name}', '${mode}')">✕</button>
+      </div>`).join('');
+  }
+
+  async function renderPDFToTiles(file, tileSize = 768) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const tiles = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const cols = Math.ceil(viewport.width / tileSize);
+      const rows = Math.ceil(viewport.height / tileSize);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const tileCanvas = document.createElement('canvas');
+          tileCanvas.width = tileSize;
+          tileCanvas.height = tileSize;
+          const tileCtx = tileCanvas.getContext('2d');
+
+          const sx = col * tileSize;
+          const sy = row * tileSize;
+          const sw = Math.min(tileSize, viewport.width - sx);
+          const sh = Math.min(tileSize, viewport.height - sy);
+
+          tileCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+          const base64 = tileCanvas.toDataURL('image/png').split(',')[1];
+          tiles.push({
+            page: pageNum,
+            tile: `${row}_${col}`,
+            data: base64
+          });
+        }
+      }
+    }
+
+    return tiles;
+  }
+
+  function setProgress(pct, label, logMsg, mode) {
+    const suffix = mode === 'rate' ? '-rate' : '';
+    document.getElementById('progress-bar' + suffix).style.width = pct + '%';
+    document.getElementById('progress-label' + suffix).textContent = label;
+    if (logMsg) {
+      const log = document.getElementById('progress-log' + suffix);
+      log.textContent += logMsg + '\n';
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  async function callClaude(messages, systemPrompt) {
+    const body = { model: "claude-sonnet-4-20250514", max_tokens: 4096, messages };
+    if (systemPrompt) body.system = systemPrompt;
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || "API-Fehler " + res.status);
+    }
+    const data = await res.json();
+    return data.content.map(c => c.text || '').join('');
+  }
+
+  async function runCreate() {
+    if (uploadedFiles.length === 0) { alert("Bitte zuerst mindestens eine PDF-Datei hochladen."); return; }
+
+    const btn = document.getElementById('create-btn');
+    const progressWrap = document.getElementById('progress-wrap');
+    const resultBox = document.getElementById('result-box');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysiere…';
+    progressWrap.classList.add('visible');
+    resultBox.classList.remove('visible');
+    document.getElementById('result-tbody').innerHTML = '';
+    document.getElementById('progress-log').textContent = '';
+    parsedRows = [];
+
+    const system = `Du bist ein Experte für Gebäudetechnik und TGA (Technische Gebäudeausrüstung).
+Deine Aufgabe: Extrahiere aus den hochgeladenen Bildern (gerenderte Plankacheln) alle Geräte und Anlagen der Gebäudetechnik.
+
+Antworte NUR mit einem JSON-Array (kein Text davor oder danach, keine Markdown-Backticks).
+Jedes Objekt im Array hat folgende Felder:
+- "kategorie": Gewerk/Kategorie (z.B. "Elektrotechnik – Starkstrom", "Versorgung Heizung", "Versorgung Kälte", "Versorgung Sanitär", "Versorgung Lüftung", "GA / MSR", "Mechanik", "Sicherheitstechnik", "IT / Datentechnik")
+- "menge": Anzahl als Zahl oder Text (z.B. 1, ">30", "ca. 20")
+- "bezeichnung": Gerät oder Anlage (z.B. "Kaltwassersatz", "Lüftungsanlage RLT-01", "Heizkörper")
+- "typ_modell": Typ, Modell, Fabrikat, technische Daten (z.B. "Daikin EWAT145B, 325 kW")
+- "raum_standort": Raum, Geschoss oder Bauteil (z.B. "BT-A, Raum A-1.07", "Dach")
+- "bemerkung": Zusatzinfos, Hinweise (kann leer sein)
+
+Erfasse ALLES was du findest. Gruppiere logisch nach Kategorie. Vermeide Duplikate zwischen Kacheln.`;
+
+    try {
+      setProgress(5, `PDFs werden gerendert (${uploadedFiles.length} Dateien)…`, `→ Starte Rendering von ${uploadedFiles.length} PDF(s)`, null);
+
+      let allTiles = [];
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+        setProgress(10 + (i * 20 / uploadedFiles.length), `Rendere ${file.name}…`, `→ ${file.name}: Zerlegung in 768×768px Kacheln`, null);
+        const tiles = await renderPDFToTiles(file);
+        allTiles.push({ filename: file.name, tiles });
+        setProgress(10 + ((i + 1) * 20 / uploadedFiles.length), `${file.name} fertig (${tiles.length} Kacheln)`, `  ✓ ${tiles.length} Kacheln generiert`, null);
+      }
+
+      const totalTiles = allTiles.reduce((sum, f) => sum + f.tiles.length, 0);
+      setProgress(30, `${totalTiles} Kacheln werden analysiert…`, `→ Starte KI-Analyse (${totalTiles} Bilder)`, null);
+
+      const contentParts = [];
+      allTiles.forEach(({ filename, tiles }) => {
+        tiles.forEach(tile => {
+          contentParts.push({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: tile.data }
+          });
+        });
+      });
+      contentParts.push({ type: "text", text: "Extrahiere alle Geräte und Anlagen aus diesen Plankacheln als JSON-Array gemäß den Anweisungen. Vermeide Duplikate." });
+
+      setProgress(50, 'KI analysiert alle Kacheln…', '→ Analyse läuft (kann 60–120 Sek. dauern)', null);
+
+      const raw = await callClaude([{ role: "user", content: contentParts }], system);
+
+      setProgress(90, 'Ergebnisse werden verarbeitet…', '→ JSON wird geparst', null);
+
+      let jsonStr = raw.trim();
+      jsonStr = jsonStr.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      parsedRows = JSON.parse(jsonStr);
+
+      setProgress(100, `Fertig! ${parsedRows.length} Einträge gefunden.`, `✓ ${parsedRows.length} Geräte/Anlagen extrahiert`, null);
+
+      renderTable(parsedRows);
+      document.getElementById('result-count').textContent = `${parsedRows.length} Einträge`;
+      resultBox.classList.add('visible');
+
+    } catch (e) {
+      setProgress(0, 'Fehler: ' + e.message, '✕ ' + e.message, null);
+      alert("Fehler: " + e.message + "\n\nBitte API-Key prüfen und erneut versuchen.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Excel generieren →';
+    }
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('result-tbody');
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td class="cat-cell">${esc(r.kategorie)}</td>
+        <td>${esc(r.menge)}</td>
+        <td>${esc(r.bezeichnung)}</td>
+        <td>${esc(r.typ_modell)}</td>
+        <td>${esc(r.raum_standort)}</td>
+        <td>${esc(r.bemerkung)}</td>
+      </tr>`).join('');
+  }
+
+  function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function downloadExcel() {
+    if (!parsedRows.length) return;
+
+    const projectName = document.getElementById('project-name').value || 'Technikaufstellung';
+    const wb = XLSX.utils.book_new();
+
+    const wsData = [
+      ['Projekt:', projectName],
+      ['Erstellt am:', new Date().toLocaleDateString('de-DE')],
+      [],
+      ['Gewerk / Kategorie', 'Menge', 'Bezeichnung', 'Typ / Modell', 'Raum / Standort', 'Bemerkung']
+    ];
+
+    parsedRows.forEach(r => {
+      wsData.push([
+        r.kategorie || '',
+        r.menge || '',
+        r.bezeichnung || '',
+        r.typ_modell || '',
+        r.raum_standort || '',
+        r.bemerkung || ''
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [
+      { wch: 32 }, { wch: 10 }, { wch: 40 }, { wch: 35 }, { wch: 28 }, { wch: 30 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Technikaufstellung');
+
+    const filename = projectName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') + '_Technikaufstellung.xlsx';
+    XLSX.writeFile(wb, filename);
+  }
+
+  function resetCreate() {
+    uploadedFiles = [];
+    parsedRows = [];
+    document.getElementById('file-list').innerHTML = '';
+    document.getElementById('result-box').classList.remove('visible');
+    document.getElementById('progress-wrap').classList.remove('visible');
+    document.getElementById('progress-bar').style.width = '0%';
+  }
+
+  async function runRate() {
+    if (uploadedFilesRate.length === 0) { alert("Bitte zuerst mindestens eine PDF-Datei hochladen."); return; }
+
+    const btn = document.getElementById('rate-btn');
+    const progressWrap = document.getElementById('progress-wrap-rate');
+    const resultBox = document.getElementById('result-box-rate');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysiere…';
+    progressWrap.classList.add('visible');
+    resultBox.classList.remove('visible');
+    document.getElementById('progress-log-rate').textContent = '';
+
+    try {
+      setProgress(5, 'PDFs werden gerendert…', `→ Starte Rendering von ${uploadedFilesRate.length} PDF(s)`, 'rate');
+
+      let allTiles = [];
+      for (let i = 0; i < uploadedFilesRate.length; i++) {
+        const file = uploadedFilesRate[i];
+        setProgress(10 + (i * 25 / uploadedFilesRate.length), `Rendere ${file.name}…`, `→ ${file.name}: Hochauflösende Kacheln`, 'rate');
+        const tiles = await renderPDFToTiles(file);
+        allTiles.push({ filename: file.name, tiles });
+        setProgress(10 + ((i + 1) * 25 / uploadedFilesRate.length), `${file.name} fertig (${tiles.length} Kacheln)`, `  ✓ ${tiles.length} Kacheln generiert`, 'rate');
+      }
+
+      const totalTiles = allTiles.reduce((sum, f) => sum + f.tiles.length, 0);
+      setProgress(35, `${totalTiles} Kacheln werden analysiert…`, `→ Multi-Pass-Plausibilitätsprüfung startet`, 'rate');
+
+      const contentParts = [];
+      allTiles.forEach(({ filename, tiles }) => {
+        tiles.forEach(tile => {
+          contentParts.push({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: tile.data }
+          });
+        });
+      });
+      contentParts.push({ type: "text", text: "Analysiere diese Schemata / Grundrisse auf technische Plausibilität. Prüfe jeden Ausschnitt gründlich." });
+
+      const system = `Du bist ein leitender TGA-Ingenieur mit 20 Jahren Erfahrung in Heizung, Lüftung, Sanitär und Elektrotechnik.
+
+Analysiere die hochgeladenen Planausschnitte (hochauflösende Kacheln) auf technische Plausibilität und erstelle eine strukturierte Bewertung auf Deutsch:
+
+1. ÜBERSICHT
+   - Welche Gewerke/Systeme sind erkennbar?
+   - Welche Pläne/Ausschnitte wurden analysiert?
+
+2. PLAUSIBILITÄTSPRÜFUNG
+   Prüfe für jedes erkennbare System:
+   - Hydraulik / Strömungstechnik: Sind Vor- und Rücklauf korrekt? Stimmen Fließrichtungen? Fehlen Pumpen?
+   - Ventile & Armaturen: Sind Absperrventile, Regelventile, Rückschlagventile korrekt positioniert? Fehlen welche?
+   - Entlüftung & Entleerung: Sind Entlüftungsventile an Hochpunkten? Entleerungen an Tiefpunkten?
+   - Druckhaltung: Ist ein MAG (Membran-Ausdehnungsgefäß) vorhanden und korrekt angeschlossen?
+   - Sicherheitseinrichtungen: Sicherheitsventile, Überströmventile, Thermische Ablaufsicherung vorhanden?
+   - Dimensionierung: Sind Rohrdurchmesser plausibel? Gibt es Engpässe?
+   - Physikalische Konsistenz: Funktioniert das System so wie gezeichnet? Gibt es Widersprüche?
+
+3. FEHLENDE KOMPONENTEN
+   Liste konkret auf, was fehlt (z.B. "Entlüftung nach Pumpe P1 fehlt", "Absperrventil vor Verbraucher X fehlt")
+
+4. AUFFÄLLIGKEITEN & RISIKEN
+   - Ungewöhnliche Verschaltungen
+   - Potenzielle Funktionsprobleme
+   - Nicht-normkonforme Ausführungen
+
+5. EMPFEHLUNGEN
+   Konkrete Verbesserungsvorschläge mit Begründung
+
+Antworte strukturiert und präzise. Nutze die hohe Auflösung der Kacheln um auch kleinste Details zu erkennen.`;
+
+      setProgress(60, 'KI führt Plausibilitätsprüfung durch…', '→ Analyse läuft (kann 90–180 Sek. dauern)', 'rate');
+
+      const text = await callClaude([{ role: "user", content: contentParts }], system);
+
+      setProgress(100, 'Analyse abgeschlossen.', '✓ Plausibilitätsprüfung fertig', 'rate');
+
+      const resultDiv = document.getElementById('rate-result-text');
+      resultDiv.innerHTML = formatAnalysis(text);
+      resultBox.classList.add('visible');
+
+    } catch(e) {
+      setProgress(0, 'Fehler: ' + e.message, '✕ ' + e.message, 'rate');
+      alert("Fehler: " + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Plausibilitätsprüfung starten →';
+    }
+  }
+
+  function formatAnalysis(text) {
+    const sections = text.split(/\n(?=\d+\.\s+[A-ZÄÖÜ])/);
+    return sections.map(section => {
+      const lines = section.split('\n');
+      const title = lines[0];
+      const content = lines.slice(1).join('\n').trim();
+      
+      if (title.match(/^\d+\.\s+/)) {
+        return `<div class="analysis-section"><h3>${esc(title)}</h3><p>${esc(content)}</p></div>`;
+      } else {
+        return `<div class="analysis-section"><p>${esc(section)}</p></div>`;
+      }
+    }).join('');
+  }
+</script>
+</body>
+</html>
