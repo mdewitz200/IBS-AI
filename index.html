@@ -178,7 +178,6 @@
       border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px;
       display: flex; align-items: flex-start; gap: 8px; margin-bottom: 1.25rem; line-height: 1.5;
     }
-    .banner.amber { background: var(--accent-amber-bg); border: 0.5px solid var(--accent-amber-border); color: var(--accent-amber); }
     .banner.info { background: var(--accent-blue-bg); border: 0.5px solid #b5d4f4; color: var(--accent-blue); }
 
     .analysis-section { margin-bottom: 2rem; }
@@ -226,8 +225,6 @@
     <button class="back-btn" onclick="showScreen('home')">← Zurück</button>
     <h2 class="screen-title">Technikaufstellung erstellen</h2>
     <p class="screen-sub">Schemata und Grundrisspläne als PDF hochladen — die KI extrahiert alle Geräte &amp; Anlagen und erstellt eine Excel-Datei. Große Pläne werden automatisch in hochauflösende Segmente zerlegt für präzise Erkennung.</p>
-      
-    </div>
 
     <div class="form-group">
       <label>Projektname / -nummer</label>
@@ -323,7 +320,7 @@
 </main>
 
 <script>
-  const API_KEY = "sk-ant-api03-B2hCbgLDPpmj0vfUnLapZPWoN2BYN3I1wmLPGsirgvkx1wrPBpI2U-GfsJMPDJLdU-94WhyQyHyqrUjzdn6wKw—_pYh0AAA";
+  const API_KEY = "sk-ant-DEIN-KEY-HIER";
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
   let uploadedFiles = [];
