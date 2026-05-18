@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taktik-Assistent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: #e2e0d8;
+      --border-strong: #c8c6bc;
+      --text: #1a1917;
+      --text-muted: #6b6963;
+      --text-faint: #a09d97;
+      --accent-blue: #185FA5;
+      --accent-blue-light: #e6f1fb;
+      --accent-green: #3B6D11;
+      --accent-green-light: #eaf3de;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 0.5px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: var(--text);
+    }
+    .logo-dot { color: var(--accent-blue); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+    }
+
+    /* ── Start screen ── */
+    #screen-home { width: 100%; max-width: 560px; text-align: center; }
+    .home-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .home-sub {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 300;
+      margin-bottom: 2.5rem;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .menu-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+      position: relative;
+      overflow: hidden;
+    }
+    .menu-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    }
+    .menu-card:active { transform: scale(0.98); }
+    .card-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .card-icon.blue { color: var(--accent-blue); }
+    .card-icon.green { color: var(--accent-green); }
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      line-height: 1.25;
+      color: var(--text);
+    }
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 300;
+      line-height: 1.5;
+    }
+    .card-arrow {
+      margin-top: auto;
+      font-size: 18px;
+      color: var(--text-faint);
+      transition: transform 0.15s, color 0.15s;
+    }
+    .menu-card:hover .card-arrow { transform: translateX(4px); color: var(--text-muted); }
+
+    /* ── Workflow screens ── */
+    .screen-inner {
+      width: 100%;
+      max-width: 680px;
+    }
+    .back-btn {
+      background: none;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.15s, color 0.15s;
+      margin-bottom: 2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+    .screen-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .screen-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-weight: 300;
+    }
+
+    /* ── Form elements ── */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.03em;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+    textarea:focus, input:focus { border-color: var(--border-strong); }
+    .form-group { margin-bottom: 1.25rem; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    select {
+      width: 100%;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .submit-btn {
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .submit-btn:hover { opacity: 0.85; }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Result box ── */
+    .result-box {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text);
+      min-height: 80px;
+      display: none;
+    }
+    .result-box.visible { display: block; }
+    .result-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── API key banner ── */
+    .api-banner {
+      background: #fffbeb;
+      border: 0.5px solid #f5d87a;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #7a5c00;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 500px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .home-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Taktik<span class="logo-dot">.</span>Assistent</div>
+</header>
+
+<main>
+
+  <!-- ── HOME ── -->
+  <div id="screen-home">
+    <h1 class="home-title">Was möchtest du<br><em>heute</em> tun?</h1>
+    <p class="home-sub">Wähle einen Bereich, um zu beginnen.</p>
+
+    <div class="card-grid">
+      <div class="menu-card" onclick="showScreen('create')">
+        <span class="card-icon blue">⊞</span>
+        <span class="card-title">Taktikaufstellungen erstellen</span>
+        <span class="card-desc">Neue Formation oder Spielsystem planen</span>
+        <span class="card-arrow">→</span>
+      </div>
+      <div class="menu-card" onclick="showScreen('rate')">
+        <span class="card-icon green">✓</span>
+        <span class="card-title">Pläne bewerten</span>
+        <span class="card-desc">Bestehende Aufstellung analysieren &amp; einschätzen</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ERSTELLEN ── -->
+  <div id="screen-create" class="screen-inner hidden">
+    <button class="back-btn" onclick="showScreen('home')">← Zurück</button>
+    <h2 class="screen-title">Taktikaufstellung erstellen</h2>
+    <p class="screen-sub">Beschreibe dein Team und deine Vorstellungen — die KI erstellt eine Aufstellung.</p>
+
+    <div class="api-banner">
+      🔑 Trage deinen API-Key einmalig in den Quellcode ein (Variable <code>API_KEY</code>).
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Sportart</label>
+        <select id="create-sport">
+          <option>Fußball</option>
+          <option>Basketball</option>
+          <option>Handball</option>
+          <option>Volleyball</option>
+          <option>Hockey</option>
+          <option>Andere</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Spieleranzahl</label>
+        <input type="text" id="create-players" placeholder="z.B. 11" value="11" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Stärken deines Teams</label>
+      <textarea id="create-strengths" rows="3" placeholder="z.B. Schnelle Außenspieler, starke Defensive, gutes Pressing..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Gegner / besondere Anforderungen</label>
+      <textarea id="create-context" rows="3" placeholder="z.B. Gegner spielt sehr offensiv, Heimspiel, wichtiges Entscheidungsspiel..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Bevorzugter Spielstil</label>
+      <select id="create-style">
+        <option>Offensiv / Angriffsfußball</option>
+        <option>Defensiv / Konter</option>
+        <option>Ballbesitz / Kontrolle</option>
+        <option>Pressing / Intensität</option>
+        <option>Flexibel / KI entscheiden lassen</option>
+      </select>
+    </div>
+
+    <button class="submit-btn" id="create-btn" onclick="runCreate()">
+      Aufstellung generieren →
+    </button>
+
+    <div class="result-box" id="create-result">
+      <div class="result-label">KI-Aufstellung</div>
+      <div id="create-result-text"></div>
+    </div>
+  </div>
+
+  <!-- ── BEWERTEN ── -->
+  <div id="screen-rate" class="screen-inner hidden">
+    <button class="back-btn" onclick="showScreen('home')">← Zurück</button>
+    <h2 class="screen-title">Plan bewerten</h2>
+    <p class="screen-sub">Beschreibe deine bestehende Aufstellung — die KI analysiert Stärken und Schwächen.</p>
+
+    <div class="api-banner">
+      🔑 Trage deinen API-Key einmalig in den Quellcode ein (Variable <code>API_KEY</code>).
+    </div>
+
+    <div class="form-group">
+      <label>Deine aktuelle Aufstellung / Taktik</label>
+      <textarea id="rate-plan" rows="6" placeholder="Beschreibe deine Formation, Positionen und Taktik so detailliert wie möglich. z.B.: Wir spielen 4-3-3. Zwei tiefe Außenverteidiger, ein defensiver Mittelfeldspieler, zwei boxed-to-box Mittelfeldspieler..."></textarea>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Sportart</label>
+        <select id="rate-sport">
+          <option>Fußball</option>
+          <option>Basketball</option>
+          <option>Handball</option>
+          <option>Volleyball</option>
+          <option>Hockey</option>
+          <option>Andere</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Spielniveau</label>
+        <select id="rate-level">
+          <option>Amateurliga</option>
+          <option>Kreisliga</option>
+          <option>Bezirksliga</option>
+          <option>Verbandsliga</option>
+          <option>Professionell</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Was möchtest du speziell bewertet haben? (optional)</label>
+      <textarea id="rate-focus" rows="2" placeholder="z.B. Defensive Stabilität, Pressingverhalten, Umschaltspiel..."></textarea>
+    </div>
+
+    <button class="submit-btn" id="rate-btn" onclick="runRate()">
+      Plan analysieren →
+    </button>
+
+    <div class="result-box" id="rate-result">
+      <div class="result-label">KI-Analyse</div>
+      <div id="rate-result-text"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ────────────────────────────────────────────
+  // 🔑 DEINEN API-KEY HIER EINTRAGEN:
+  const API_KEY = "sk-ant-api03-B2hCbgLDPpmj0vfUnLapZPWoN2BYN3I1wmLPGsirgvkx1wrPBpI2U-GfsJMPDJLdU-94WhyQyHyqrUjzdn6wKw—_pYh0AAA";
+  // ────────────────────────────────────────────
+
+  function showScreen(name) {
+    document.getElementById('screen-home').classList.add('hidden');
+    document.getElementById('screen-create').classList.add('hidden');
+    document.getElementById('screen-rate').classList.add('hidden');
+    document.getElementById('screen-' + name).classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function callClaude(prompt) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1500,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || "API-Fehler");
+    }
+    const data = await res.json();
+    return data.content[0].text;
+  }
+
+  async function runCreate() {
+    const sport    = document.getElementById('create-sport').value;
+    const players  = document.getElementById('create-players').value;
+    const strengths = document.getElementById('create-strengths').value;
+    const context  = document.getElementById('create-context').value;
+    const style    = document.getElementById('create-style').value;
+
+    const prompt = `Du bist ein erfahrener Taktiktrainer für ${sport}.
+Erstelle eine detaillierte Taktikaufstellung für ${players} Spieler.
+
+Stärken des Teams: ${strengths || "nicht angegeben"}
+Spielsituation / Gegner: ${context || "nicht angegeben"}
+Bevorzugter Spielstil: ${style}
+
+Antworte auf Deutsch mit:
+1. Empfohlene Formation
+2. Positionsbeschreibung für jede Position
+3. Taktische Anweisungen (Offensive & Defensive)
+4. Wichtigste Schlüsselprinzipien
+5. Kurze Begründung warum diese Taktik passt`;
+
+    await runAI(prompt, 'create');
+  }
+
+  async function runRate() {
+    const plan   = document.getElementById('rate-plan').value;
+    const sport  = document.getElementById('rate-sport').value;
+    const level  = document.getElementById('rate-level').value;
+    const focus  = document.getElementById('rate-focus').value;
+
+    if (!plan.trim()) {
+      alert("Bitte beschreibe zuerst deine Aufstellung.");
+      return;
+    }
+
+    const prompt = `Du bist ein erfahrener Taktikexperte für ${sport} auf ${level}-Niveau.
+Analysiere folgende Aufstellung / Taktik:
+
+${plan}
+
+${focus ? "Besonderer Fokus auf: " + focus : ""}
+
+Antworte auf Deutsch mit einer strukturierten Analyse:
+1. Gesamtbewertung (1–10) mit Begründung
+2. Stärken der Aufstellung
+3. Schwächen / Risiken
+4. Konkrete Verbesserungsvorschläge
+5. Alternative Formationen die besser passen könnten`;
+
+    await runAI(prompt, 'rate');
+  }
+
+  async function runAI(prompt, mode) {
+    const btn    = document.getElementById(mode + '-btn');
+    const box    = document.getElementById(mode + '-result');
+    const output = document.getElementById(mode + '-result-text');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysiere...';
+    box.classList.add('visible');
+    output.textContent = "Die KI denkt nach...";
+
+    try {
+      const text = await callClaude(prompt);
+      output.textContent = text;
+    } catch (e) {
+      output.textContent = "Fehler: " + e.message + "\n\nBitte prüfe deinen API-Key.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = mode === 'create' ? 'Aufstellung generieren →' : 'Plan analysieren →';
+    }
+  }
+</script>
+</body>
+</html>
